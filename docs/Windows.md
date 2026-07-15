@@ -33,14 +33,14 @@ By default, the `Keys/` subkey has security ACLs that prevent even the local `Ad
 
 To view or export these keys, a process must run with SYSTEM privileges.
 
-### Classic Bluetooth Keys
+### Classic Bluetooth Keys (Supported in v1.0)
 For Classic Bluetooth devices, the link keys are stored as registry values under the Adapter subkey.
 *   **Value Name**: The Device MAC (12 lowercase hex characters, e.g. `54466b0009fb`).
 *   **Type**: `REG_BINARY`
 *   **Size**: 16 bytes (128-bit Link Key).
 *   **Example**: `"54466b0009fb"=hex:58,85,46,ea,82,c0,33,ce,95,08,e1,c7,4e,c7,4f,d6`
 
-### Bluetooth Low Energy (LE) Keys
+### Bluetooth Low Energy (LE) Keys (Roadmap v1.1)
 For Low Energy (LE) devices, Windows creates a nested registry subkey under the Adapter key named after the Device MAC.
 *   **Subkey Path**: `BTHPORT\Parameters\Keys\{Adapter-MAC}\{Device-MAC}`
 *   **Values**:
@@ -48,8 +48,8 @@ For Low Energy (LE) devices, Windows creates a nested registry subkey under the 
     *   `KeyLength`: `REG_DWORD` - size of the key, usually `0x10` (16 bytes).
     *   `ERand` (Randomizer): `REG_BINARY` (8 bytes) - random number sent by the peripheral.
     *   `EDIV` (Encrypted Diversifier): `REG_DWORD` - diversifier sent by the peripheral.
-    *   `IRK` (Identity Resolving Key): `REG_BINARY` (16 bytes) - resolves random addresses.
-    *   `CSRK` (Connection Signature Resolving Key): `REG_BINARY` (16 bytes) - signs data packet headers.
+    *   `IRK` (Identity Resolving Key): `REG_BINARY` (16 bytes).
+    *   `CSRK` (Connection Signature Resolving Key): `REG_BINARY` (16 bytes).
 
 ---
 
@@ -65,4 +65,4 @@ To export the keys without requiring external compiled binaries (like Sysinterna
 4.  **Parsing & Cleanup**:
     *   Reads the output file (`btkeys_temp.reg`) encoded in UTF-16LE.
     *   Deletes the scheduled task immediately.
-    *   Deletes the temporary `.reg` file as soon as the in-memory parse begins to minimize the footprint of sensitive cryptographic materials on disk.
+    *   Deletes the temporary `.reg` file as soon as the in-memory parse begins.

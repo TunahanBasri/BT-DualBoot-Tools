@@ -1,7 +1,7 @@
 # Export-BluetoothKeys.ps1
-# Part of BT DualBoot Tools
+# Part of BT DualBoot Tools (v1.0 - Classic Bluetooth)
 #
-# Description: Exports Bluetooth pairing keys (Classic and BLE) from the Windows registry
+# Description: Exports Classic Bluetooth pairing keys from the Windows registry
 #              to a JSON file (btkeys.json) for easy syncing with Linux (BlueZ).
 #
 # Requirements: Must be run as Administrator (uses a temporary SYSTEM scheduled task).
@@ -15,32 +15,13 @@ if (-not $isAdmin) {
     Exit 1
 }
 
-# Helper: Convert ERand (little-endian hex) to Rand (decimal integer string) for BlueZ
-function Convert-ERandToRand {
-    param([string]$eRandHex) # e.g. "E03ADB0BA8551C36"
-    if ([string]::IsNullOrEmpty($eRandHex) -or $eRandHex.Length -ne 16) {
-        return "0"
-    }
-    # Reverse byte order (little-endian to big-endian)
-    $reversedHex = ""
-    for ($i = 14; $i -ge 0; $i -= 2) {
-        $reversedHex += $eRandHex.Substring($i, 2)
-    }
-    try {
-        # Convert big-endian hex to unsigned 64-bit integer string
-        return [System.Convert]::ToUInt64($reversedHex, 16).ToString()
-    } catch {
-        return "0"
-    }
-}
-
-# Helper: Get Friendly Name of Device from Registry or system
+# Helper: Get Friendly Name of Device from Registry
 function Get-DeviceFriendlyName {
     param([string]$deviceMacRaw) # e.g. "54466b0009fb"
     $cleanMac = $deviceMacRaw.Replace(":", "").ToLower()
     $formattedMac = ($cleanMac -replace '..(?!$)', '$0:').ToUpper()
     
-    # 1. Try reading the friendly name from the BTHPORT Devices registry key
+    # Try reading the friendly name from the BTHPORT Devices registry key
     $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Devices\$cleanMac"
     if (Test-Path $regPath) {
         $nameBytes = (Get-ItemProperty $regPath -ErrorAction SilentlyContinue).Name
@@ -54,7 +35,7 @@ function Get-DeviceFriendlyName {
         }
     }
     
-    # 2. Try falling back to Get-PnpDevice
+    # Fallback to Get-PnpDevice
     try {
         $pnpDevice = Get-PnpDevice -Class "Bluetooth" -ErrorAction SilentlyContinue | 
             Where-Object { $_.DeviceID -like "*$cleanMac*" -or $_.InstanceId -like "*$cleanMac*" } | 
@@ -132,8 +113,6 @@ if (Test-Path $tempRegFile) { Remove-Item $tempRegFile -Force }
 
 $adapters = @{}
 $currentAdapter = $null
-$currentDeviceMac = $null
-$currentDeviceData = $null
 
 foreach ($line in $lines) {
     if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith(";")) { continue }
@@ -141,102 +120,44 @@ foreach ($line in $lines) {
     if ($line.StartsWith("[") -and $line.EndsWith("]")) {
         $keyPath = $line.Substring(1, $line.Length - 2)
         
-        # Match HKLM\...\Keys\<AdapterMAC> or HKLM\...\Keys\<AdapterMAC>\<DeviceMAC>
-        if ($keyPath -match "BTHPORT\\Parameters\\Keys\\(?<subPath>[^\\]+(\\[^\\]+)?)$") {
-            $subPath = $Matches['subPath']
-            $parts = $subPath.Split('\')
+        # Match HKLM\...\Keys\<AdapterMAC>
+        # We only care about root adapter keys for Classic devices.
+        if ($keyPath -match "BTHPORT\\Parameters\\Keys\\(?<adapterRaw>[0-9a-fA-F]{12})$") {
+            $adapterMacRaw = $Matches['adapterRaw'].ToUpper()
+            $adapterMacFormatted = ($adapterMacRaw -replace '..(?!$)', '$0:').ToUpper()
+            $currentAdapter = $adapterMacRaw
             
-            if ($parts.Length -eq 1) {
-                # Adapter Key
-                $adapterMacRaw = $parts[0].ToUpper()
-                $adapterMacFormatted = ($adapterMacRaw -replace '..(?!$)', '$0:').ToUpper()
-                $currentAdapter = $adapterMacRaw
-                $currentDeviceMac = $null
-                $currentDeviceData = $null
-                
-                if (-not $adapters.ContainsKey($currentAdapter)) {
-                    $adapters[$currentAdapter] = [ordered]@{
-                        adapter = $adapterMacFormatted
-                        devices = @()
-                    }
+            if (-not $adapters.ContainsKey($currentAdapter)) {
+                $adapters[$currentAdapter] = [ordered]@{
+                    adapter = $adapterMacFormatted
+                    devices = @()
                 }
-            } elseif ($parts.Length -eq 2) {
-                # BLE Device Subkey (inside Adapter)
-                $adapterMacRaw = $parts[0].ToUpper()
-                $deviceMacRaw = $parts[1].ToUpper()
-                $deviceMacFormatted = ($deviceMacRaw -replace '..(?!$)', '$0:').ToUpper()
-                
-                $currentAdapter = $adapterMacRaw
-                $currentDeviceMac = $deviceMacRaw
-                
-                if (-not $adapters.ContainsKey($currentAdapter)) {
-                    $adapters[$currentAdapter] = [ordered]@{
-                        adapter = ($adapterMacRaw -replace '..(?!$)', '$0:').ToUpper()
-                        devices = @()
-                    }
-                }
-                
-                $deviceName = Get-DeviceFriendlyName $deviceMacRaw
-                $currentDeviceData = [ordered]@{
-                    mac  = $deviceMacFormatted
-                    name = $deviceName
-                    type = "LE"
-                }
-                $adapters[$currentAdapter].devices += $currentDeviceData
             }
         } else {
+            # Skip subkeys (BLE devices) or other registry paths
             $currentAdapter = $null
-            $currentDeviceMac = $null
-            $currentDeviceData = $null
         }
     } elseif ($line -match '^"([^"]+)"\s*=\s*(.+)$') {
         $valName = $Matches[1]
         $valVal = $Matches[2]
         
-        if ($currentAdapter -and $null -eq $currentDeviceMac) {
-            # Classic Device Link Key under Adapter Key (Value name is Device MAC)
-            if ($valName -match "^[0-9a-fA-F]{12}$") {
-                $deviceMacRaw = $valName.ToUpper()
-                $deviceMacFormatted = ($deviceMacRaw -replace '..(?!$)', '$0:').ToUpper()
-                
-                $keyHex = ""
-                if ($valVal.StartsWith("hex:")) {
-                    $keyHex = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
-                }
-                
-                $deviceName = Get-DeviceFriendlyName $deviceMacRaw
-                $deviceObj = [ordered]@{
-                    mac  = $deviceMacFormatted
-                    name = $deviceName
-                    type = "Classic"
-                    key  = $keyHex
-                }
-                $adapters[$currentAdapter].devices += $deviceObj
+        # Classic Device Link Key under Adapter Key (Value name is Device MAC)
+        if ($currentAdapter -and $valName -match "^[0-9a-fA-F]{12}$") {
+            $deviceMacRaw = $valName.ToUpper()
+            $deviceMacFormatted = ($deviceMacRaw -replace '..(?!$)', '$0:').ToUpper()
+            
+            $keyHex = ""
+            if ($valVal.StartsWith("hex:")) {
+                $keyHex = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
             }
-        } elseif ($currentDeviceMac -and $currentDeviceData) {
-            # BLE Device Key details
-            if ($valName -eq "LTK") {
-                if ($valVal.StartsWith("hex:")) {
-                    $currentDeviceData.ltk = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
-                }
-            } elseif ($valName -eq "ERand") {
-                if ($valVal.StartsWith("hex:")) {
-                    $eRandHex = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
-                    $currentDeviceData.rand = Convert-ERandToRand $eRandHex
-                }
-            } elseif ($valName -eq "EDIV") {
-                if ($valVal.StartsWith("dword:")) {
-                    $currentDeviceData.ediv = [Convert]::ToInt32($valVal.Substring(6), 16)
-                }
-            } elseif ($valName -eq "IRK") {
-                if ($valVal.StartsWith("hex:")) {
-                    $currentDeviceData.irk = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
-                }
-            } elseif ($valName -eq "CSRK") {
-                if ($valVal.StartsWith("hex:")) {
-                    $currentDeviceData.csrk = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
-                }
+            
+            $deviceName = Get-DeviceFriendlyName $deviceMacRaw
+            $deviceObj = [ordered]@{
+                mac  = $deviceMacFormatted
+                name = $deviceName
+                key  = $keyHex
             }
+            $adapters[$currentAdapter].devices += $deviceObj
         }
     }
 }
@@ -250,7 +171,7 @@ foreach ($key in $adapters.Keys) {
 }
 
 if ($adaptersList.Count -eq 0) {
-    Write-Host "[WARNING] No Bluetooth adapters or devices found with pairing keys." -ForegroundColor Yellow
+    Write-Host "[WARNING] No Classic Bluetooth adapters or devices found with pairing keys." -ForegroundColor Yellow
     Exit 0
 }
 
@@ -268,23 +189,15 @@ Write-Host "Saved JSON export to: $outputPath" -ForegroundColor Cyan
 Write-Host ""
 
 foreach ($adapterObj in $adaptersList) {
-    Write-Host "Adapter" -ForegroundColor White -FontWeight Bold
+    Write-Host "Adapter" -ForegroundColor White
     Write-Host "  $($adapterObj.adapter)" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "Devices" -ForegroundColor White -FontWeight Bold
+    Write-Host "Devices" -ForegroundColor White
     
     foreach ($device in $adapterObj.devices) {
         Write-Host "  $($device.name)" -ForegroundColor Yellow
         Write-Host "    MAC   : $($device.mac)" -ForegroundColor DarkGray
-        Write-Host "    Type  : $($device.type)" -ForegroundColor DarkGray
-        
-        if ($device.type -eq "Classic") {
-            Write-Host "    KEY   : $($device.key)" -ForegroundColor Cyan
-        } else {
-            if ($device.ltk)  { Write-Host "    LTK   : $($device.ltk)" -ForegroundColor Cyan }
-            if ($device.ediv) { Write-Host "    EDIV  : $($device.ediv)" -ForegroundColor DarkCyan }
-            if ($device.rand) { Write-Host "    RAND  : $($device.rand)" -ForegroundColor DarkCyan }
-        }
+        Write-Host "    KEY   : $($device.key)" -ForegroundColor Cyan
         Write-Host ""
     }
 }

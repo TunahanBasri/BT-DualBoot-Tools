@@ -1,7 +1,7 @@
 # import_key.py
-# Part of BT DualBoot Tools
+# Part of BT DualBoot Tools (v1.0 - Classic Bluetooth)
 #
-# Description: Imports Bluetooth keys from btkeys.json into BlueZ configuration files.
+# Description: Imports Classic Bluetooth keys from btkeys.json into BlueZ configuration files.
 #
 # Usage: sudo python import_key.py [path_to_btkeys.json]
 #
@@ -71,70 +71,21 @@ def update_info_file(info_path, device_data):
             key, val = line.split('=', 1)
             key = key.strip()
             
-            if current_section == 'LinkKey' and device_data['type'] == 'Classic' and key == 'Key':
+            if current_section == 'LinkKey' and key == 'Key':
                 new_lines.append(f"Key={device_data['key']}\n")
                 updated_fields.add(('LinkKey', 'Key'))
-                i += 1
-                continue
-                
-            if current_section == 'LongTermKey' and device_data['type'] == 'LE':
-                if key == 'Key' and 'ltk' in device_data:
-                    new_lines.append(f"Key={device_data['ltk']}\n")
-                    updated_fields.add(('LongTermKey', 'Key'))
-                    i += 1
-                    continue
-                elif key == 'EDiv' and 'ediv' in device_data:
-                    new_lines.append(f"EDiv={device_data['ediv']}\n")
-                    updated_fields.add(('LongTermKey', 'EDiv'))
-                    i += 1
-                    continue
-                elif key == 'Rand' and 'rand' in device_data:
-                    new_lines.append(f"Rand={device_data['rand']}\n")
-                    updated_fields.add(('LongTermKey', 'Rand'))
-                    i += 1
-                    continue
-                    
-            if current_section == 'IdentityResolvingKey' and device_data['type'] == 'LE' and key == 'Key' and 'irk' in device_data:
-                new_lines.append(f"Key={device_data['irk']}\n")
-                updated_fields.add(('IdentityResolvingKey', 'Key'))
-                i += 1
-                continue
-                
-            if current_section == 'LocalSignatureKey' and device_data['type'] == 'LE' and key == 'Key' and 'csrk' in device_data:
-                new_lines.append(f"Key={device_data['csrk']}\n")
-                updated_fields.add(('LocalSignatureKey', 'Key'))
                 i += 1
                 continue
                 
         new_lines.append(line)
         i += 1
 
-    # Append sections that were missing entirely
-    if device_data['type'] == 'Classic':
-        if 'LinkKey' not in sections_present:
-            new_lines.append("\n[LinkKey]\n")
-            new_lines.append(f"Key={device_data['key']}\n")
-            new_lines.append("Type=0\n")
-            new_lines.append("PINLength=0\n")
-            
-    elif device_data['type'] == 'LE':
-        if 'LongTermKey' not in sections_present:
-            new_lines.append("\n[LongTermKey]\n")
-            new_lines.append(f"Key={device_data['ltk']}\n")
-            if 'ediv' in device_data:
-                new_lines.append(f"EDiv={device_data['ediv']}\n")
-            if 'rand' in device_data:
-                new_lines.append(f"Rand={device_data['rand']}\n")
-            new_lines.append("Authenticated=0\n")
-            new_lines.append("EncSize=16\n")
-            
-        if 'irk' in device_data and 'IdentityResolvingKey' not in sections_present:
-            new_lines.append("\n[IdentityResolvingKey]\n")
-            new_lines.append(f"Key={device_data['irk']}\n")
-            
-        if 'csrk' in device_data and 'LocalSignatureKey' not in sections_present:
-            new_lines.append("\n[LocalSignatureKey]\n")
-            new_lines.append(f"Key={device_data['csrk']}\n")
+    # Append [LinkKey] section if it was missing entirely
+    if 'LinkKey' not in sections_present:
+        new_lines.append("\n[LinkKey]\n")
+        new_lines.append(f"Key={device_data['key']}\n")
+        new_lines.append("Type=0\n")
+        new_lines.append("PINLength=0\n")
 
     # Write the updated config back
     with open(info_path, 'w') as f:
@@ -184,7 +135,6 @@ def main():
             
         adapter_path = os.path.join('/var/lib/bluetooth', adapter_mac.lower())
         if not os.path.exists(adapter_path):
-            # Try matching adapter MAC case insensitively
             found_adapter = None
             if os.path.exists('/var/lib/bluetooth'):
                 for entry in os.listdir('/var/lib/bluetooth'):
@@ -203,9 +153,8 @@ def main():
         for dev in devices:
             dev_mac = dev.get('mac')
             dev_name = dev.get('name', 'Unknown')
-            dev_type = dev.get('type')
             
-            if not dev_mac:
+            if not dev_mac or not dev.get('key'):
                 continue
                 
             device_dir = find_device_dir(adapter_path, dev_mac)
@@ -221,7 +170,7 @@ def main():
                 fail_count += 1
                 continue
                 
-            print(f"  [*] Updating {dev_name} ({dev_mac}) [{dev_type}]...")
+            print(f"  [*] Updating {dev_name} ({dev_mac})...")
             if update_info_file(info_file, dev):
                 print(f"  [SUCCESS] Updated keys for {dev_name}")
                 success_count += 1

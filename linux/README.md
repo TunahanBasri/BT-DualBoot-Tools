@@ -1,6 +1,6 @@
-# BT DualBoot Tools - Linux Import
+# BT DualBoot Tools - Linux Import (v1.0)
 
-This folder contains scripts to import Bluetooth pairing keys (Classic and Low Energy) exported from Windows into the Linux BlueZ stack.
+This folder contains scripts to import Classic Bluetooth pairing keys exported from Windows into the Linux BlueZ stack.
 
 ## Contents
 *   `backup.py`: Backs up `/var/lib/bluetooth` into a timestamped directory (e.g. `/var/lib/bluetooth_backup_YYYYMMDD_HHMMSS`).
@@ -14,11 +14,12 @@ This folder contains scripts to import Bluetooth pairing keys (Classic and Low E
 
 ## How it Works
 1.  **Backup**: The script runs `backup.py` first to ensure that a copy of your working Bluetooth configs is safely stored in `/var/lib/bluetooth_backup_<timestamp>`.
-2.  **Matching**: The script scans `/var/lib/bluetooth` directories, looking for folders corresponding to the adapter and device MAC addresses found in the JSON file. It matches MACs case-insensitively and handles folder differences.
+2.  **Matching**: The script scans `/var/lib/bluetooth` directories, looking for folders corresponding to the adapter and device MAC addresses found in the JSON file. It matches MACs case-insensitively.
 3.  **Update**:
-    *   **Classic Devices**: Modifies the `Key` value under the `[LinkKey]` section of the `info` configuration.
-    *   **Low Energy Devices**: Modifies the `Key`, `EDiv`, and `Rand` values under the `[LongTermKey]` section. It also updates `[IdentityResolvingKey]` and `[LocalSignatureKey]` if available.
+    *   **Classic Devices**: Modifies the `Key` value under the `[LinkKey]` section of the `info` configuration file.
 4.  **Restart**: Runs `systemctl restart bluetooth` so that BlueZ loads the updated credentials without requiring a reboot.
+
+*Note: Bluetooth Low Energy (LE) keys are not imported in v1.0 and are planned for v1.1.*
 
 ## Usage
 

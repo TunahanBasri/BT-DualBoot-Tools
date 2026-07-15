@@ -1,6 +1,8 @@
-# BT DualBoot Tools 🚀
+# BT DualBoot Tools 🚀 (v1.0 - Classic Bluetooth)
 
-**BT DualBoot Tools**, Windows ve Linux (BlueZ) işletim sistemlerini çift önyükleme (dual-boot) olarak kullanan kişilerin, her işletim sistemi geçişinde Bluetooth cihazlarını (klavye, fare, kulaklık vb.) tekrar tekrar eşleştirmek zorunda kalmasını önleyen, eşleştirme anahtarlarını yedekleyip senkronize etmeyi kolaylaştıran açık kaynaklı bir araçtır.
+**BT DualBoot Tools**, Windows ve Linux (BlueZ) işletim sistemlerini çift önyükleme (dual-boot) olarak kullanan kişilerin, her işletim sistemi geçişinde Bluetooth cihazlarını (klavye, fare vb.) tekrar tekrar eşleştirmek zorunda kalmasını önleyen, eşleştirme anahtarlarını yedekleyip senkronize etmeyi kolaylaştıran açık kaynaklı bir araçtır.
+
+**Sürüm 1.0 (v1.0) Hedefi**: Yalnızca Classic Bluetooth HID (Klavye, Fare vb.) cihazlarını destekler. Bu sayede ilk sürüm kararlı, sade ve kullanımı kolay tutulmuştur.
 
 ---
 
@@ -10,7 +12,7 @@ Eşleştirme anahtarlarını senkronize etmek için aşağıdaki adımları sır
 
 ```
 [ Windows ]                                 [ Linux ]
-  Windows PowerShell / Python                  Sudo Python Import
+  Windows PowerShell                           Sudo Python Import
  ┌─────────────────────────┐                 ┌────────────────────────┐
  │   .\Export-Keys.ps1     │ ──btkeys.json─> │ sudo python import.py  │
  └─────────────────────────┘                 └────────────────────────┘
@@ -19,9 +21,10 @@ Eşleştirme anahtarlarını senkronize etmek için aşağıdaki adımları sır
                                                  Bluetooth Hazır! 🎉
 ```
 
-1.  **Windows**: PowerShell veya Python scriptini Yönetici olarak çalıştırın:
+1.  **Windows**: PowerShell scriptini Yönetici yetkileriyle çalıştırın:
     ```powershell
     # Windows/ klasörünün içinde:
+    Set-ExecutionPolicy Bypass -Scope Process -Force
     .\Export-BluetoothKeys.ps1
     ```
     Bu işlem geçerli dizinde bir `btkeys.json` dosyası oluşturur.
@@ -42,7 +45,6 @@ bt-dualboot-tools/
 │
 ├── windows/                # Windows veri aktarma araçları
 │   ├── Export-BluetoothKeys.ps1
-│   ├── Export-BluetoothKeys.py
 │   └── README.md
 │
 ├── linux/                  # Linux içe aktarma ve yedekleme araçları
@@ -53,7 +55,7 @@ bt-dualboot-tools/
 ├── docs/                   # Detaylı teknik dökümantasyonlar
 │   ├── Windows.md          # Registry detayları ve SYSTEM yetkisi
 │   ├── Linux.md            # BlueZ dosya mimarisi
-│   └── Bluetooth.md        # Cryptography, Endianness ve ERand dönüştürme mantığı
+│   └── Bluetooth.md        # Cryptography ve anahtar dönüştürme mantığı
 │
 ├── LICENSE                 # MIT Lisansı
 └── README.md               # Bu dosya
@@ -72,12 +74,20 @@ Bu aracı kullanırken güvenlik ve gizlilik hakkında bilmeniz gereken temel hu
 
 ---
 
+## 🛣️ Yol Haritası (Roadmap)
+
+*   **v1.0 (Mevcut)**: Klasik Bluetooth HID Cihaz desteği (Klavye, Fare vb.), Cihaz Adı Eşleştirme (Friendly Name Lookup).
+*   **v1.1**: Bluetooth Low Energy (BLE) desteği (LTK, EDIV, Rand parametreleri ve endianness dönüşümleri).
+*   **v1.2**: Kulaklık / Ses cihazı eşleştirme desteği.
+*   **v1.3**: Gamepad (Oyun kolları) eşleştirme desteği.
+
+---
+
 ## 📖 Detaylı Teknik Dökümanlar
 
-Sistemlerin Bluetooth anahtarlarını saklama biçimi ve arka planda çalışan dönüşüm algoritmaları hakkında daha fazla bilgi edinebilirsiniz:
 *   [Windows Bluetooth Registry Dökümantasyonu](docs/Windows.md)
 *   [Linux BlueZ Config Dökümantasyonu](docs/Linux.md)
-*   [Bluetooth Kriptografi ve Endianness Dönüşüm Detayları](docs/Bluetooth.md)
+*   [Bluetooth Kriptografi Detayları](docs/Bluetooth.md)
 
 ---
 
