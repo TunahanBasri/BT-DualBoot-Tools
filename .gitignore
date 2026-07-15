@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary files and outputs
+btkeys.json
+*.reg
+*.log
+.DS_Store
