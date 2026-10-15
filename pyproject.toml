@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bt-dualboot-tools"
+version = "1.0.0"
+description = "Sync Windows Bluetooth pairing keys with Linux BlueZ for seamless dual-boot experience"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "TunahanBasri" }
+]
+keywords = [
+    "bluetooth",
+    "dual-boot",
+    "bluez",
+    "windows",
+    "linux",
+    "bthport",
+    "pairing-keys",
+    "linkkey"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Operating System",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+bt-dualboot-tools = "bt_dualboot.cli:main"
+bt-dualboot = "bt_dualboot.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/TunahanBasri/bt-dualboot-tools"
+Documentation = "https://github.com/TunahanBasri/bt-dualboot-tools#readme"
+Issues = "https://github.com/TunahanBasri/bt-dualboot-tools/issues"
+Funding = "https://github.com/sponsors/TunahanBasri"
+
+[tool.setuptools.packages.find]
+where = ["src"]

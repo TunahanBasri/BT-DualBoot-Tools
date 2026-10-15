@@ -1,0 +1,22 @@
+[
+  {
+    "_README": "BU DOSYA BIR ORNEKTIR! Bluetooth anahtarlari ELLE YAZILAMAZ. Lutfen Windows'ta 'Export-Keys.bat' calistirarak gercek 'btkeys.json' dosyanizi olusturun.",
+    "adapter": "4C:03:4F:E0:D1:B0",
+    "devices": [
+      {
+        "name": "Ornek Bluetooth Fare (Classic)",
+        "mac": "54:46:6B:00:09:FB",
+        "key": "588546EA82C033CE9508E1C74EC74FD6"
+      },
+      {
+        "name": "Ornek Bluetooth Klavye (BLE Low Energy)",
+        "mac": "F4:4E:FC:21:44:A8",
+        "ble": {
+          "ltk": "AABBCCDDEEFF00112233445566778899",
+          "ediv": "0x1234",
+          "erand": "0x0102030405060708"
+        }
+      }
+    ]
+  }
+]

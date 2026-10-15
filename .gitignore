@@ -1,11 +1,30 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
 
-# Temporary files and outputs
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary / sensitive pairing exports
 btkeys.json
-*.reg
-*.log
-.DS_Store
+btkeys_temp*.reg
+*.tmp
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp

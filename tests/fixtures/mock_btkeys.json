@@ -1,0 +1,17 @@
+[
+  {
+    "adapter": "4C:03:4F:E0:D1:B0",
+    "devices": [
+      {
+        "mac": "54:46:6B:00:09:FB",
+        "name": "Logitech MX Master 3",
+        "key": "588546EA82C033CE9508E1C74EC74FD6"
+      },
+      {
+        "mac": "F4:4E:FC:21:44:A8",
+        "name": "Keychron K2 Mechanical Keyboard",
+        "key": "0123456789ABCDEF0123456789ABCDEF"
+      }
+    ]
+  }
+]

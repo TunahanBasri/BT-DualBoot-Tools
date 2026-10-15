@@ -1,54 +1,34 @@
-# BT DualBoot Tools - Windows Export (v1.0)
+# Windows Key Export Guide 🪟
 
-This folder contains the script to export Classic Bluetooth pairing keys from the Windows registry.
-
-## Contents
-*   `Export-BluetoothKeys.ps1`: The core PowerShell script that performs the registry export, parsing, and JSON generation.
-
-## How it Works
-The Windows registry stores Bluetooth pairing keys under `HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Keys`. By default, only the `SYSTEM` account has permission to read these keys.
-
-To circumvent this without third-party utilities (like `PsExec`), the PowerShell script:
-1.  Creates a temporary Scheduled Task running under the `NT AUTHORITY\SYSTEM` account.
-2.  Runs `reg export` to write the keys to a temporary UTF-16LE registry file in the user's temp directory.
-3.  Starts the task and waits for it to complete.
-4.  Deletes the task and parses the generated registry file.
-5.  Extracts adapter MACs and Classic keys (`LinkKey`) for paired devices.
-6.  Resolves the device names from `HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Devices` (which is readable by local Administrators).
-7.  Saves the data in the current folder as `btkeys.json` and outputs a summary to the console.
-
-*Note: Bluetooth Low Energy (LE) device extraction is not supported in v1.0 and is planned for v1.1.*
-
-## Prerequisites
-*   Windows 10 / 11.
-*   PowerShell 5.1 or newer.
-*   Administrator privileges.
-
-## Usage
-
-Open an **Administrator PowerShell** terminal, navigate to this folder, and run:
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force
-.\Export-BluetoothKeys.ps1
-```
+This component exports Bluetooth Link Keys from the Windows registry to an interoperable JSON format (`btkeys.json`).
 
 ---
 
-## Output Format (`btkeys.json`)
-The script generates a file named `btkeys.json` in your current working directory. The structure lists devices by adapter:
+## 🔒 Security & Privilege Architecture
 
-```json
-[
-  {
-    "adapter": "4C:03:4F:E0:D1:B0",
-    "devices": [
-      {
-        "mac": "54:46:6B:00:09:FB",
-        "name": "Piranha-2375",
-        "key": "588546EA82C033CE9508E1C74EC74FD6"
-      }
-    ]
-  }
-]
+In Windows 10/11, Bluetooth link keys are stored under:
+```text
+HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Keys
 ```
+
+This registry hive has an Access Control List (ACL) that restricts read access exclusively to **`NT AUTHORITY\SYSTEM`**. Even an elevated Administrator cannot read this key directly via standard registry queries.
+
+### How `Export-BluetoothKeys.ps1` Works Safely:
+1. **Verification**: Checks if the PowerShell session has Administrator privileges.
+2. **Ephemeral Task**: Registers a temporary Windows Scheduled Task set to run as `NT AUTHORITY\SYSTEM`.
+3. **Execution**: The task invokes `reg export` to write the keys to a temporary file in `$env:TEMP`.
+4. **Cleanup Guarantee**: Inside a `try ... finally` block, the scheduled task is **immediately unregistered**, and the temporary file is deleted from disk right after being parsed into memory.
+5. **JSON Generation**: Outputs `btkeys.json` with resolved friendly device names (e.g., Logitech MX Master 3, Keychron K2).
+
+---
+
+## 🚀 How to Run
+
+1. Open **PowerShell as Administrator** (Right-click -> *Run as administrator*).
+2. Navigate to this directory and execute:
+   ```powershell
+   Set-ExecutionPolicy Bypass -Scope Process -Force
+   .\Export-BluetoothKeys.ps1
+   ```
+3. A file named `btkeys.json` will be generated in your current directory.
+4. Copy `btkeys.json` to an accessible location on your Linux partition (or a shared FAT32/NTFS drive).

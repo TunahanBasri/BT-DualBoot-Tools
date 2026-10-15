@@ -1,27 +1,33 @@
 # Export-BluetoothKeys.ps1
-# Part of BT DualBoot Tools (v1.0 - Classic Bluetooth)
+# Part of BT-DualBoot Tools (v1.0 - Classic Bluetooth)
 #
-# Description: Exports Classic Bluetooth pairing keys from the Windows registry
+# Description: Safely exports Classic Bluetooth pairing keys from the Windows registry
 #              to a JSON file (btkeys.json) for easy syncing with Linux (BlueZ).
 #
-# Requirements: Must be run as Administrator (uses a temporary SYSTEM scheduled task).
+# Requirements: Must be run in PowerShell as Administrator (uses a temporary SYSTEM scheduled task).
+
+[CmdletBinding()]
+param(
+    [string]$OutputPath = (Join-Path (Get-Location) "btkeys.json")
+)
 
 $ErrorActionPreference = "Stop"
 
-# 1. Check Administrator Privileges
+# 1. Verify Elevated Privileges
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host "[ERROR] This script must be run as an Administrator. Please run PowerShell as Administrator." -ForegroundColor Red
+    Write-Host "`n[ERROR] Administrator privileges are required to access Bluetooth keys." -ForegroundColor Red
+    Write-Host "Please right-click PowerShell and choose 'Run as Administrator'.`n" -ForegroundColor Yellow
     Exit 1
 }
 
-# Helper: Get Friendly Name of Device from Registry
+# Helper: Friendly Name Resolution
 function Get-DeviceFriendlyName {
-    param([string]$deviceMacRaw) # e.g. "54466b0009fb"
+    param([string]$deviceMacRaw) # 12 characters, e.g. "54466b0009fb"
     $cleanMac = $deviceMacRaw.Replace(":", "").ToLower()
     $formattedMac = ($cleanMac -replace '..(?!$)', '$0:').ToUpper()
     
-    # Try reading the friendly name from the BTHPORT Devices registry key
+    # Check BTHPORT Devices registry parameter
     $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Devices\$cleanMac"
     if (Test-Path $regPath) {
         $nameBytes = (Get-ItemProperty $regPath -ErrorAction SilentlyContinue).Name
@@ -35,37 +41,39 @@ function Get-DeviceFriendlyName {
         }
     }
     
-    # Fallback to Get-PnpDevice
+    # Fallback to PnP Device cache
     try {
-        $pnpDevice = Get-PnpDevice -Class "Bluetooth" -ErrorAction SilentlyContinue | 
+        $pnp = Get-PnpDevice -Class "Bluetooth" -ErrorAction SilentlyContinue | 
             Where-Object { $_.DeviceID -like "*$cleanMac*" -or $_.InstanceId -like "*$cleanMac*" } | 
             Select-Object -First 1
-        if ($pnpDevice -and $pnpDevice.FriendlyName) {
-            return $pnpDevice.FriendlyName
+        if ($pnp -and $pnp.FriendlyName) {
+            return $pnp.FriendlyName
         }
     } catch {}
     
     return "Unknown Device ($formattedMac)"
 }
 
-# 2. Set Up Temporary Files and Tasks
-$tempRegFile = Join-Path $env:TEMP "btkeys_temp.reg"
-if (Test-Path $tempRegFile) { Remove-Item $tempRegFile -Force }
+# 2. Setup Ephemeral Task and Output File
+$tempRegFile = Join-Path $env:TEMP "btkeys_temp_$(Get-Random).reg"
+$taskName = "BTDualBoot_ExportKeys_$(Get-Random)"
 
-$taskName = "ExportBluetoothKeysTemp"
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host "          BT-DualBoot Tools: Windows Key Exporter       " -ForegroundColor Cyan
+Write-Host "========================================================`n" -ForegroundColor Cyan
+
+Write-Host "[*] Registering temporary SYSTEM task..." -ForegroundColor DarkGray
 $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c reg export HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Keys `"$tempRegFile`" /y"
 $principal = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount
 $settings = New-ScheduledTaskSettingsSet
 
-Write-Host "[*] Registering temporary SYSTEM task to export registry keys..." -ForegroundColor Cyan
 Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings -Force | Out-Null
 
 try {
-    # 3. Execute and Wait for Scheduled Task
-    Write-Host "[*] Running export task..." -ForegroundColor Cyan
+    Write-Host "[*] Executing registry extraction via NT AUTHORITY\SYSTEM..." -ForegroundColor Cyan
     Start-ScheduledTask -TaskName $taskName
     
-    $timeoutSeconds = 10
+    $timeoutSeconds = 12
     $elapsed = 0
     $success = $false
     
@@ -80,124 +88,181 @@ try {
     }
     
     if (-not $success -or -not (Test-Path $tempRegFile) -or (Get-Item $tempRegFile).Length -eq 0) {
-        throw "Registry export task timed out or failed to write output."
+        throw "Failed to extract Bluetooth keys. The scheduled task timed out or produced an empty file."
     }
+
+    # 3. Parse Registry Export in Memory
+    Write-Host "[*] Parsing Bluetooth adapters and paired devices..." -ForegroundColor Cyan
+    $rawLines = Get-Content $tempRegFile -Encoding Unicode
     
-} finally {
-    # 4. Clean up Scheduled Task
-    Write-Host "[*] Cleaning up temporary export task..." -ForegroundColor Cyan
-    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
-}
-
-# 5. Parse registry export file
-Write-Host "[*] Parsing registry data..." -ForegroundColor Cyan
-$rawLines = Get-Content $tempRegFile -Encoding Unicode
-
-# Preprocess to join registry line continuations (lines ending with \)
-$lines = @()
-$currentLine = ""
-foreach ($l in $rawLines) {
-    $trimmed = $l.Trim()
-    if ($trimmed.EndsWith("\")) {
-        $currentLine += $trimmed.Substring(0, $trimmed.Length - 1)
-    } else {
-        $currentLine += $trimmed
-        $lines += $currentLine
-        $currentLine = ""
+    # Handle multi-line continuations in .reg format
+    $lines = @()
+    $currentLine = ""
+    foreach ($l in $rawLines) {
+        $trimmed = $l.Trim()
+        if ($trimmed.EndsWith("\")) {
+            $currentLine += $trimmed.Substring(0, $trimmed.Length - 1)
+        } else {
+            $currentLine += $trimmed
+            $lines += $currentLine
+            $currentLine = ""
+        }
     }
-}
-if ($currentLine -ne "") { $lines += $currentLine }
+    if ($currentLine -ne "") { $lines += $currentLine }
 
-# Delete the temporary REG file immediately after reading
-if (Test-Path $tempRegFile) { Remove-Item $tempRegFile -Force }
+    $adapters = @{}
+    $currentAdapter = $null
+    $currentBleDevice = $null
 
-$adapters = @{}
-$currentAdapter = $null
+    foreach ($line in $lines) {
+        if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith(";")) { continue }
 
-foreach ($line in $lines) {
-    if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith(";")) { continue }
-
-    if ($line.StartsWith("[") -and $line.EndsWith("]")) {
-        $keyPath = $line.Substring(1, $line.Length - 2)
-        
-        # Match HKLM\...\Keys\<AdapterMAC>
-        # We only care about root adapter keys for Classic devices.
-        if ($keyPath -match "BTHPORT\\Parameters\\Keys\\(?<adapterRaw>[0-9a-fA-F]{12})$") {
-            $adapterMacRaw = $Matches['adapterRaw'].ToUpper()
-            $adapterMacFormatted = ($adapterMacRaw -replace '..(?!$)', '$0:').ToUpper()
-            $currentAdapter = $adapterMacRaw
+        if ($line.StartsWith("[") -and $line.EndsWith("]")) {
+            $keyPath = $line.Substring(1, $line.Length - 2)
             
-            if (-not $adapters.ContainsKey($currentAdapter)) {
-                $adapters[$currentAdapter] = [ordered]@{
-                    adapter = $adapterMacFormatted
-                    devices = @()
+            # 1. Adapter key: HKLM\...\Keys\<12-hex-mac>
+            if ($keyPath -match "BTHPORT\\Parameters\\Keys\\(?<adapterRaw>[0-9a-fA-F]{12})$") {
+                $adapterMacRaw = $Matches['adapterRaw'].ToUpper()
+                $adapterMacFormatted = ($adapterMacRaw -replace '..(?!$)', '$0:').ToUpper()
+                $currentAdapter = $adapterMacRaw
+                $currentBleDevice = $null
+                
+                if (-not $adapters.ContainsKey($currentAdapter)) {
+                    $adapters[$currentAdapter] = [ordered]@{
+                        adapter = $adapterMacFormatted
+                        devices = @()
+                    }
+                }
+            } 
+            # 2. BLE Device subkey: HKLM\...\Keys\<adapterRaw>\<deviceRaw>
+            elseif ($keyPath -match "BTHPORT\\Parameters\\Keys\\(?<adapterRaw>[0-9a-fA-F]{12})\\(?<deviceRaw>[0-9a-fA-F]{12})$") {
+                $adapterMacRaw = $Matches['adapterRaw'].ToUpper()
+                $adapterMacFormatted = ($adapterMacRaw -replace '..(?!$)', '$0:').ToUpper()
+                $deviceMacRaw = $Matches['deviceRaw'].ToUpper()
+                $deviceMacFormatted = ($deviceMacRaw -replace '..(?!$)', '$0:').ToUpper()
+                
+                $currentAdapter = $adapterMacRaw
+                $currentBleDevice = $deviceMacFormatted
+                
+                if (-not $adapters.ContainsKey($currentAdapter)) {
+                    $adapters[$currentAdapter] = [ordered]@{
+                        adapter = $adapterMacFormatted
+                        devices = @()
+                    }
+                }
+                
+                $existing = $adapters[$currentAdapter].devices | Where-Object { $_.mac -eq $deviceMacFormatted } | Select-Object -First 1
+                if (-not $existing) {
+                    $deviceName = Get-DeviceFriendlyName $deviceMacRaw
+                    $newDev = [ordered]@{
+                        mac  = $deviceMacFormatted
+                        name = $deviceName
+                        key  = ""
+                        ble  = [ordered]@{}
+                    }
+                    $adapters[$currentAdapter].devices += $newDev
+                }
+            } else {
+                $currentAdapter = $null
+                $currentBleDevice = $null
+            }
+        } elseif ($line -match '^"([^"]+)"\s*=\s*(.+)$') {
+            $valName = $Matches[1]
+            $valVal = $Matches[2]
+            
+            # Classic Device Link Key
+            if ($currentAdapter -and (-not $currentBleDevice) -and $valName -match "^[0-9a-fA-F]{12}$") {
+                $deviceMacRaw = $valName.ToUpper()
+                $deviceMacFormatted = ($deviceMacRaw -replace '..(?!$)', '$0:').ToUpper()
+                
+                $keyHex = ""
+                if ($valVal.StartsWith("hex:")) {
+                    $keyHex = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
+                }
+                
+                $existing = $adapters[$currentAdapter].devices | Where-Object { $_.mac -eq $deviceMacFormatted } | Select-Object -First 1
+                if ($existing) {
+                    $existing.key = $keyHex
+                } else {
+                    $deviceName = Get-DeviceFriendlyName $deviceMacRaw
+                    $deviceObj = [ordered]@{
+                        mac  = $deviceMacFormatted
+                        name = $deviceName
+                        key  = $keyHex
+                    }
+                    $adapters[$currentAdapter].devices += $deviceObj
                 }
             }
-        } else {
-            # Skip subkeys (BLE devices) or other registry paths
-            $currentAdapter = $null
-        }
-    } elseif ($line -match '^"([^"]+)"\s*=\s*(.+)$') {
-        $valName = $Matches[1]
-        $valVal = $Matches[2]
-        
-        # Classic Device Link Key under Adapter Key (Value name is Device MAC)
-        if ($currentAdapter -and $valName -match "^[0-9a-fA-F]{12}$") {
-            $deviceMacRaw = $valName.ToUpper()
-            $deviceMacFormatted = ($deviceMacRaw -replace '..(?!$)', '$0:').ToUpper()
-            
-            $keyHex = ""
-            if ($valVal.StartsWith("hex:")) {
-                $keyHex = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
+            # BLE Properties: LTK, ERand, EDIV
+            elseif ($currentAdapter -and $currentBleDevice) {
+                $devObj = $adapters[$currentAdapter].devices | Where-Object { $_.mac -eq $currentBleDevice } | Select-Object -First 1
+                if ($devObj) {
+                    if (-not $devObj.Contains("ble") -or -not $devObj.ble) {
+                        $devObj["ble"] = [ordered]@{}
+                    }
+                    if ($valName -eq "LTK" -and $valVal.StartsWith("hex:")) {
+                        $devObj.ble["ltk"] = $valVal.Substring(4).Replace(",", "").Replace(" ", "").ToUpper()
+                    } elseif ($valName -eq "ERand" -and $valVal -match "hex(\([0-9a-fA-F]+\))?:(.+)$") {
+                        $rawHex = $Matches[2].Replace(",", "").Replace(" ", "").ToUpper()
+                        $devObj.ble["erand"] = $rawHex
+                    } elseif ($valName -eq "EDIV" -and $valVal.StartsWith("dword:")) {
+                        $devObj.ble["ediv"] = [Convert]::ToInt32($valVal.Substring(6), 16)
+                    }
+                }
             }
-            
-            $deviceName = Get-DeviceFriendlyName $deviceMacRaw
-            $deviceObj = [ordered]@{
-                mac  = $deviceMacFormatted
-                name = $deviceName
-                key  = $keyHex
-            }
-            $adapters[$currentAdapter].devices += $deviceObj
         }
     }
-}
 
-# 6. Format and Output JSON
-$adaptersList = @()
-foreach ($key in $adapters.Keys) {
-    if ($adapters[$key].devices.Count -gt 0) {
-        $adaptersList += $adapters[$key]
+    # 4. Generate Output JSON
+    $adaptersList = @()
+    foreach ($key in $adapters.Keys) {
+        if ($adapters[$key].devices.Count -gt 0) {
+            $adaptersList += $adapters[$key]
+        }
     }
-}
 
-if ($adaptersList.Count -eq 0) {
-    Write-Host "[WARNING] No Classic Bluetooth adapters or devices found with pairing keys." -ForegroundColor Yellow
-    Exit 0
-}
+    if ($adaptersList.Count -eq 0) {
+        Write-Host "`n[WARNING] No Classic Bluetooth paired devices found in registry.`n" -ForegroundColor Yellow
+        Exit 0
+    }
 
-# Write output JSON to btkeys.json in current directory
-$jsonContent = ConvertTo-Json -InputObject $adaptersList -Depth 100
-$outputPath = Join-Path (Get-Location) "btkeys.json"
-Set-Content -Path $outputPath -Value $jsonContent -Encoding UTF8
+    $jsonContent = ConvertTo-Json -InputObject $adaptersList -Depth 10
+    Set-Content -Path $OutputPath -Value $jsonContent -Encoding UTF8
 
-# 7. Print Console Summary
-Write-Host ""
-Write-Host "=========================================" -ForegroundColor Green
-Write-Host "          EXPORT COMPLETED SUCCESSFULLY  " -ForegroundColor Green
-Write-Host "=========================================" -ForegroundColor Green
-Write-Host "Saved JSON export to: $outputPath" -ForegroundColor Cyan
-Write-Host ""
+    Write-Host "`n========================================================================" -ForegroundColor Green
+    Write-Host "  KEY TEBRIKLER! BLUETOOTH ANAHTAR PAKETINIZ HAZIR (btkeys.json)" -ForegroundColor Green
+    Write-Host "========================================================================`n" -ForegroundColor Green
+    Write-Host "  Oluşturulan Dosya: $OutputPath`n" -ForegroundColor Cyan
 
-foreach ($adapterObj in $adaptersList) {
-    Write-Host "Adapter" -ForegroundColor White
-    Write-Host "  $($adapterObj.adapter)" -ForegroundColor DarkGray
-    Write-Host ""
-    Write-Host "Devices" -ForegroundColor White
-    
-    foreach ($device in $adapterObj.devices) {
-        Write-Host "  $($device.name)" -ForegroundColor Yellow
-        Write-Host "    MAC   : $($device.mac)" -ForegroundColor DarkGray
-        Write-Host "    KEY   : $($device.key)" -ForegroundColor Cyan
+    foreach ($adapterObj in $adaptersList) {
+        Write-Host "  * Adapter: $($adapterObj.adapter)" -ForegroundColor Cyan
+        foreach ($device in $adapterObj.devices) {
+            Write-Host "     |-- Cihaz: $($device.name)" -ForegroundColor White
+            Write-Host "     |   MAC:   $($device.mac)" -ForegroundColor DarkGray
+            if ($device.key) {
+                Write-Host "     |   Classic Key: $($device.key.Substring(0, 4))...$($device.key.Substring($device.key.Length - 4))" -ForegroundColor Green
+            }
+            if ($device.ble -and $device.ble.ltk) {
+                Write-Host "     |   BLE LTK:     $($device.ble.ltk.Substring(0, 4))...$($device.ble.ltk.Substring($device.ble.ltk.Length - 4))" -ForegroundColor Yellow
+            }
+        }
         Write-Host ""
+    }
+
+    Write-Host "========================================================================" -ForegroundColor Yellow
+    Write-Host "  👉 SIRADAKI ADIM:" -ForegroundColor Yellow
+    Write-Host "  1. Bu klasordeki 'btkeys.json' dosyasini bir USB Flash Bellege atin" -ForegroundColor White
+    Write-Host "     (veya Linux'tan erisebildiginiz bir ortak klasore kopyalayin)." -ForegroundColor White
+    Write-Host "  2. Bilgisayarinizi yeniden baslatip LINUX'a gecin." -ForegroundColor White
+    Write-Host "  3. Linux terminalinde su komutu calistirin:" -ForegroundColor White
+    Write-Host "        sudo python sync.py" -ForegroundColor Cyan
+    Write-Host "     (Dosyayi bulamazsa fareyle terminale surukleyip birakabilirsiniz!)" -ForegroundColor DarkGray
+    Write-Host "========================================================================`n" -ForegroundColor Yellow
+
+} finally {
+    # 6. Guaranteed Cleanup of Task and Temporary Files
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+    if (Test-Path $tempRegFile) {
+        Remove-Item $tempRegFile -Force -ErrorAction SilentlyContinue
     }
 }
