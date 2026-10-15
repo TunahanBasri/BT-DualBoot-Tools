@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Test on Python ${{ matrix.python-version }} (${{ matrix.os }})
+    name: Test Python ${{ matrix.python-version }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -28,16 +28,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest ruff
+          pip install pytest
+          pip install -e .
 
-      - name: Lint with ruff
+      - name: Run test suite via standalone runner (Zero-dependency test)
         run: |
-          ruff check src tests
+          python tests/run_tests.py
 
       - name: Run test suite via pytest
         run: |
           pytest tests -v
-
-      - name: Run test suite via standalone runner
-        run: |
-          python tests/run_tests.py
