@@ -66,35 +66,42 @@ Summary: 0 already synced, 2 to update, 0 not found in Linux
 
 ---
 
-## 🚀 Quickstart Guide (2 Steps • 30 Seconds)
+## 🚀 Quickstart Guide (3 Simple Steps)
 
 ```
-[ Windows ]                                 [ Linux ]
-  Double-Click Export-Keys.bat                 sudo python sync.py
- ┌─────────────────────────┐                 ┌────────────────────────┐
- │     Export-Keys.bat     │ ──btkeys.json─> │   sudo python sync.py  │
- └─────────────────────────┘                 └────────────────────────┘
-                                                         │
-                                                         ▼
-                                                 Bluetooth Ready! 🎉
+[ Step 1: Linux ]                     [ Step 2: Windows ]                     [ Step 3: Linux ]
+Pair device in Settings              1. Pair device in Settings              1. Run sudo python sync.py
+(Creates BlueZ profile)      ──►     2. Double-click Export-Keys.bat ──►     2. Drag & drop btkeys.json
+                                     3. Send btkeys.json to Linux            🎉 Bluetooth Connected!
 ```
 
 > [!TIP]
-> **First-time setup tip:** Ensure your Bluetooth keyboard/mouse has been paired in Linux at least once. This creates the device profile under `/var/lib/bluetooth`.
+> **Why this order?** Bluetooth peripherals only store the *single most recent key*. Pairing in Linux first creates the device hardware folder in BlueZ. Pairing in Windows second negotiates the latest active key. The sync script then copies this key to Linux!
 
-### Step 1: Export Keys in Windows
-1. Pair your Bluetooth devices in Windows settings normally.
-2. Double-click **`Export-Keys.bat`** (or run `.\windows\Export-BluetoothKeys.ps1` in PowerShell as Admin).
-3. A clean `btkeys.json` file will appear in your folder. Copy it to your Linux drive or flash drive.
-
-### Step 2: Sync in Linux
+### Step 1: Pair in Linux First (Zero Point)
 1. Boot into **Linux**.
-2. Run the interactive sync helper:
+2. Open Bluetooth Settings and pair your mouse/keyboard normally.
+3. Confirm the device works. *(Linux creates the internal profile under `/var/lib/bluetooth`).*
+
+### Step 2: Pair & Export in Windows
+1. Reboot into **Windows**.
+2. Open Bluetooth Settings and pair the same mouse/keyboard. *(Windows writes the newest key into the device).*
+3. Double-click **`Export-Keys.bat`** (or run `.\windows\Export-BluetoothKeys.ps1` in PowerShell as Admin).
+4. A clean `btkeys.json` file will appear in your project folder.
+5. **Transfer `btkeys.json` to Linux using whatever method is easiest for you:**
+   - 💬 **Method A (No USB needed • Messaging / Cloud):** Send `btkeys.json` to yourself via WhatsApp Web, Telegram Saved Messages, Google Drive, or Email. Download it in Linux!
+   - 📂 **Method B (Direct Disk Access):** Open your Windows `C:\` partition directly from Linux's file manager and grab `btkeys.json`.
+   - 💾 **Method C (Traditional USB Drive):** Copy `btkeys.json` onto a USB flash drive.
+
+### Step 3: One-Click Sync in Linux
+1. Boot back into **Linux**.
+2. Open a terminal in the project folder and run:
    ```bash
    sudo python sync.py
    ```
    *(Or if you prefer the CLI: `sudo bt-dualboot btkeys.json` or `sudo python -m bt_dualboot.cli btkeys.json --dry-run`)*
-3. **Done!** Classic & BLE cryptographic keys (with automatic Little-Endian Rand/EDiv reversal) are instantly injected into BlueZ. Your keyboard and mouse connect immediately without ever needing re-pairing!
+3. Drag and drop your **`btkeys.json`** file directly into the terminal window (or place it in the project folder and press Enter).
+4. **Done!** The tool automatically creates a rollback backup, converts BLE keys, updates BlueZ, and restarts Bluetooth. Your keyboard and mouse connect immediately without ever needing re-pairing!
 
 ---
 

@@ -19,7 +19,7 @@ This procedure prevents the loss of connection when you change operating systems
 1. Dual-boot personal computer with Microsoft Windows and Linux installed on separate partitions or disks.
 2. Bluetooth Host Controller (internal or external USB adapter).
 3. Bluetooth peripheral device (keyboard, mouse, or audio device).
-4. One external USB storage device (flash drive) formatted with FAT32, exFAT, or NTFS filesystem.
+4. File transfer medium (WhatsApp Web, Cloud Storage, direct Windows partition access, or a USB flash drive).
 
 ### B. Software and Permissions Required
 1. Microsoft Windows 10 or Windows 11 (Administrator privilege required).
@@ -48,8 +48,8 @@ This procedure prevents the loss of connection when you change operating systems
                                                                    v
 +-------------------+      +---------------------+      +---------------------+
 |    ALL SYSTEMS    |      |       TASK 05       |      |       TASK 04       |
-| Direct Connection | <--- | Run sync.py on      | <--- | Copy btkeys.json to |
-| Verified (Done!)  |      | Linux (Syncs BlueZ) |      | USB Flash Drive     |
+| Direct Connection | <--- | Run sync.py on      | <--- | Transfer btkeys.json|
+| Verified (Done!)  |      | Linux (Syncs BlueZ) |      | (WhatsApp/Cloud/USB)|
 +-------------------+      +---------------------+      +---------------------+
 ```
 
@@ -88,21 +88,21 @@ This procedure prevents the loss of connection when you change operating systems
 ---
 
 ### SUBTASK 04: TRANSFER THE KEY PACKAGE TO LINUX
-1. Insert your USB storage device into the computer.
-2. Copy the file `btkeys.json` to the USB storage device.
-3. Safely remove the USB storage device from Windows.
-4. Restart the computer in Linux.
+Transfer `btkeys.json` to your Linux environment using any of the following methods:
+- **Method A (Cloud / Messaging):** Send `btkeys.json` to yourself via WhatsApp Web, Telegram, Google Drive, or Email, then download it in Linux.
+- **Method B (Direct Partition Access):** In Linux, access your Windows `C:\` partition directly via the file manager.
+- **Method C (USB Storage Device):** Copy `btkeys.json` onto an external USB flash drive.
 
 ---
 
 ### SUBTASK 05: SYNCHRONIZE KEYS IN LINUX
-1. Insert the USB storage device into the Linux computer.
+1. Restart the computer in Linux.
 2. Open a terminal window in the `bt-dualboot-tools` project folder.
 3. Execute the following command:
    ```bash
    sudo python sync.py
    ```
-4. Drag and drop the `btkeys.json` file from your USB drive into the terminal window.
+4. Drag and drop the `btkeys.json` file (from Downloads, USB, or C:\) into the terminal window.
 5. Press the `Enter` key.
 6. The system executes the following automatic actions:
    - Creates a timestamped backup in `/var/lib/bluetooth/backups/`.
