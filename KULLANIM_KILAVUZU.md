@@ -72,7 +72,7 @@ Oluşsun)                    Oluşan btkeys.json'ı           🎉 BİTTİ! Art�
    *(İsterseniz dosyayı doğrudan proje klasörünün içine kopyalayıp menüden [1] tuşuna da basabilirsiniz.)*
 6. Sistem otomatik olarak:
    * Mevcut ayarlarınızın tarihli yedeğini alır (`/var/lib/bluetooth/backups/`).
-   * Windows anahtarlarını Linux BlueZ formatına dönüştürür.
+   * Eşleşme anahtarlarını Linux BlueZ yapılandırmasına aktarır.
    * Bluetooth servisini yeniden başlatır ve canlı bağlantıyı test eder:
      ```text
      Canlı Bağlantı Durumu:
@@ -98,5 +98,5 @@ Oluşsun)                    Oluşan btkeys.json'ı           🎉 BİTTİ! Art�
   ```
   ve menüden **[4] (Geri Al / Rollback)** seçeneğini seçin.
 
-### Soru 4: Keychron / Logitech gibi yeni nesil BLE klavyem var, çalışır mı?
-* **Cevap:** Evet! Bu araç Classic Bluetooth (LinkKey) ve Bluetooth Low Energy (BLE LTK, ERand, EDiv) kriptografik standartlarının tamamını destekler.
+### Soru 4: Keychron / Logitech gibi yeni nesil klavye veya fareler çalışır mı?
+* **Cevap:** Evet! Bu araç Classic Bluetooth (LinkKey) ve Bluetooth Low Energy (BLE LTK, ERand, EDiv) standartlarını destekler. (Not: Bazı modern Bluetooth Smart/BLE fare modelleri her yeni eşleştirmede donanım MAC adresini kaydırdığı için bu tür farelerin Classic Bluetooth moduyla veya varsa USB alıcısıyla eşleştirilmesi önerilir.)

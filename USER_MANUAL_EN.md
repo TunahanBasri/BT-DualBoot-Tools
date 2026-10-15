@@ -109,8 +109,7 @@ Transfer `btkeys.json` to your Linux environment using any of the following meth
 5. Press the `Enter` key.
 6. The system executes the following automatic actions:
    - Creates a timestamped backup in `/var/lib/bluetooth/backups/`.
-   - Converts Little-Endian BLE components to BlueZ Big-Endian standard.
-   - Updates `/var/lib/bluetooth/[Adapter]/[Device]/info`.
+   - Injects and configures pairing keys in `/var/lib/bluetooth/[Adapter]/[Device]/info`.
    - Restarts the `bluetooth` service.
 
 ---
