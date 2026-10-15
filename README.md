@@ -71,27 +71,27 @@ Summary: 0 already synced, 2 to update, 0 not found in Linux
 ```mermaid
 flowchart TD
     subgraph Windows [" 🪟 Windows Session "]
-        A[Administrator PowerShell] -->|Runs| B[Export-BluetoothKeys.ps1]
-        B -->|Ephemeral Task| C[NT AUTHORITY/SYSTEM]
-        C -->|reg export| D[BTHPORT Parameters/Keys]
-        D -->|In-Memory Parse & PnP Lookup| E[Friendly Names Resolved]
-        E -->|Atomic Clean File| F[btkeys.json]
+        A["Administrator PowerShell"] -->|Runs| B["Export-BluetoothKeys.ps1"]
+        B -->|Ephemeral Task| C["NT AUTHORITY/SYSTEM"]
+        C -->|reg export| D["BTHPORT Parameters/Keys"]
+        D -->|In-Memory Parse & PnP Lookup| E["Friendly Names Resolved"]
+        E -->|Atomic Clean File| F["btkeys.json"]
     end
 
     subgraph Storage [" 🔄 Shared Storage / Partition "]
-        F --> G[(btkeys.json)]
+        F --> G[("btkeys.json")]
     end
 
     subgraph Linux [" 🐧 Linux Session (BlueZ) "]
-        G -->|CLI Import| H[bt-dualboot CLI]
-        H -->|Validation| I[Schema & MAC Validator]
-        H -->|Safety First| J[create_backup]
-        J -->|Timestamped Snapshot| K[/var/lib/bluetooth_backup_*]
-        I -->|Plan Check| L{--dry-run ?}
-        L -->|Yes| M[Print Diff Table & Exit]
-        L -->|No| N[Non-Destructive Atomic INI Injection]
-        N -->|systemctl restart| O[BlueZ bluetoothd]
-        O --> P[Peripherals Connected Instantly! 🎉]
+        G -->|CLI Import| H["bt-dualboot CLI"]
+        H -->|Validation| I["Schema & MAC Validator"]
+        H -->|Safety First| J["create_backup"]
+        J -->|Timestamped Snapshot| K["/var/lib/bluetooth/backups/..."]
+        I -->|Plan Check| L{"--dry-run ?"}
+        L -->|Yes| M["Print Diff Table & Exit"]
+        L -->|No| N["Non-Destructive Atomic INI Injection"]
+        N -->|systemctl restart| O["BlueZ bluetoothd"]
+        O --> P["Peripherals Connected Instantly! 🎉"]
     end
 ```
 

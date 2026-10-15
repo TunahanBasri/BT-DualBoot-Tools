@@ -9,27 +9,27 @@
 ```mermaid
 flowchart TD
     subgraph Windows [" Windows Subsystem "]
-        A[Administrator Session] -->|Triggers| B[Export-BluetoothKeys.ps1]
-        B -->|Ephemeral Task| C[NT AUTHORITY/SYSTEM]
-        C -->|reg export| D[BTHPORT/Parameters/Keys]
-        D -->|In-Memory Parse| E[Friendly Name Resolution]
-        E -->|Atomic Write| F[btkeys.json]
+        A["Administrator Session"] -->|Triggers| B["Export-BluetoothKeys.ps1"]
+        B -->|Ephemeral Task| C["NT AUTHORITY/SYSTEM"]
+        C -->|reg export| D["BTHPORT/Parameters/Keys"]
+        D -->|In-Memory Parse| E["Friendly Name Resolution"]
+        E -->|Atomic Write| F["btkeys.json"]
     end
 
     subgraph Transfer [" Partition / Flash / Shared Drive "]
-        F --> G[(btkeys.json)]
+        F --> G[("btkeys.json")]
     end
 
     subgraph Linux [" Linux Subsystem (BlueZ) "]
-        G -->|Imports| H[bt-dualboot CLI]
-        H -->|Validation| I[parse_export_json]
-        H -->|Safety First| J[create_backup]
-        J -->|Timestamped Snapshot| K[/var/lib/bluetooth_backup_*]
-        I -->|Inspection Plan| L{--dry-run ?}
-        L -->|Yes| M[Display Diff Table & Exit]
-        L -->|No| N[Apply LinkKey into info INI]
-        N -->|systemctl restart| O[bluetoothd Daemon]
-        O --> P[Seamless Connection Established 🎉]
+        G -->|Imports| H["bt-dualboot CLI"]
+        H -->|Validation| I["parse_export_json"]
+        H -->|Safety First| J["create_backup"]
+        J -->|Timestamped Snapshot| K["/var/lib/bluetooth/backups/..."]
+        I -->|Inspection Plan| L{"--dry-run ?"}
+        L -->|Yes| M["Display Diff Table & Exit"]
+        L -->|No| N["Apply LinkKey into info INI"]
+        N -->|systemctl restart| O["bluetoothd Daemon"]
+        O --> P["Seamless Connection Established 🎉"]
     end
 ```
 
