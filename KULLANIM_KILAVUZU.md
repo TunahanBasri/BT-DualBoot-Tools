@@ -55,6 +55,9 @@ Oluşsun)                    Oluşan btkeys.json'ı           🎉 BİTTİ! Art�
    * 📂 **2. Yol (Doğrudan Windows Diski):** Linux dosya yöneticisinde sol menüdeki Windows (C:) diskinize tıklayıp doğrudan bu klasörün içinden alın.
    * 💾 **3. Yol (Geleneksel USB):** Dosyayı bir USB flash belleğe kopyalayın.
 
+> [!NOTE]
+> 🔒 **Güvenlik Tavsiyesi:** Bluetooth eşleşme anahtarları donanım şifreleme anahtarlarıdır. Dosyayı WhatsApp, Telegram veya E-posta ile aktardıysanız, senkronizasyon tamamlandıktan sonra dosyayı sohbetinizden ve İndirilenler klasöründen silmeniz önerilir.
+
 ---
 
 ### ADIM 3: Linux'a Geri Dönüş ve Tek Tıkla Senkronizasyon
@@ -73,7 +76,7 @@ Oluşsun)                    Oluşan btkeys.json'ı           🎉 BİTTİ! Art�
    * Bluetooth servisini yeniden başlatır ve canlı bağlantıyı test eder:
      ```text
      Canlı Bağlantı Durumu:
-      ✔ Logitech MX Master 3 -> ANINDA BAĞLANDI! 🎉
+      ✔ Sony WH-1000XM4 -> ANINDA BAĞLANDI! 🎉
      ```
 
 **Tebrikler! İşlem bu kadar.** Artık bilgisayarınızı ister Windows'ta açın, ister Linux'ta; cihazınız hiçbir şifre sormadan doğrudan bağlanacaktır.

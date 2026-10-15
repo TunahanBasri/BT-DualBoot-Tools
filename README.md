@@ -39,24 +39,22 @@ Because each OS negotiates a distinct cryptographic Link Key with the device dur
 ## ⚡ Terminal Demo Preview
 
 ```text
-+--------------------------------------------------------------+
-|                BT-DualBoot Tools v1.0.0                         |
-|   Seamless Bluetooth Key Sync Between Windows and Linux (BlueZ)|
-+--------------------------------------------------------------+
-
->>> SIMULATION MODE (--dry-run): No files will be modified <<<
++-----------------------------------------------------------------+
+|                    BT-DualBoot Tools v1.0.0                     |
+|  Seamless Bluetooth Key Sync Between Windows and Linux (BlueZ)  |
++-----------------------------------------------------------------+
 
 Synchronization Plan:
 Device Name              Device MAC         Status             Details
 ---------------------------------------------------------------------------
-Logitech MX Master 3     54:46:6b:00:09:fb  WILL UPDATE        Key: 1111...1111 -> 5885...4FD6
+Sony WH-1000XM4          38:18:4c:82:11:04  WILL UPDATE        Key: 1111...1111 -> 5885...4FD6
 Keychron K2 Mechanical   f4:4e:fc:21:44:a8  WILL UPDATE        New [LinkKey] section
 ---------------------------------------------------------------------------
 Summary: 0 already synced, 2 to update, 0 not found in Linux
 
 [*] Creating automatic BlueZ configuration backup...
 [SUCCESS] Snapshot saved to: /var/lib/bluetooth_backup_20261015_013000
- [OK] Updated Logitech MX Master 3 (54:46:6b:00:09:fb)
+ [OK] Updated Sony WH-1000XM4 (38:18:4c:82:11:04)
  [OK] Updated Keychron K2 Mechanical (f4:4e:fc:21:44:a8)
 [*] Reloading Bluetooth service...
 [SUCCESS] Bluetooth service restarted successfully.
@@ -93,6 +91,9 @@ Pair device in Settings              1. Pair device in Settings              1. 
    - 📂 **Method B (Direct Disk Access):** Open your Windows `C:\` partition directly from Linux's file manager and grab `btkeys.json`.
    - 💾 **Method C (Traditional USB Drive):** Copy `btkeys.json` onto a USB flash drive.
 
+> [!NOTE]
+> 🔒 **Security Best Practice:** Bluetooth Link Keys are cryptographic secrets. If you transfer `btkeys.json` via messaging or cloud (WhatsApp/Telegram/Email), delete the file/message from your chat and downloads once synchronization is complete.
+
 ### Step 3: One-Click Sync in Linux
 1. Boot back into **Linux**.
 2. Open a terminal in the project folder and run:
@@ -109,7 +110,8 @@ Pair device in Settings              1. Pair device in Settings              1. 
 
 | Feature / Metric | 🔄 Re-Pairing Each Boot | 🛠️ Offline Disk Mount | 📦 Third-Party Binaries | 🚀 **BT-DualBoot Tools** |
 | :--- | :--- | :--- | :--- | :--- |
-| **Time per Switch** | 2 - 5 Minutes | 10 - 20 Minutes | 3 - 5 Minutes | **< 2 Seconds** |
+| **Time per OS Switch** | 2 - 5 Minutes (every reboot) | Manual remount & sync | 3 - 5 Minutes | **0 Seconds (Instant connection)** |
+| **Initial Setup Time** | 0 Minutes | 15 - 30 Minutes | 5 - 10 Minutes | **~3 Minutes (One-time only)** |
 | **External Dependencies** | None | Raw NTFS drivers / parsers | External runtimes | **Zero (Native OS tools only)** |
 | **Disk / OS Integrity** | Safe | Potential dirty bit / fast startup issue | Varies | **Safe (Native read-only API)** |
 | **Device Friendly Names** | Manual guesswork | Raw MAC only | Raw MAC only | **Automatic resolution** |
@@ -117,7 +119,7 @@ Pair device in Settings              1. Pair device in Settings              1. 
 | **Instant Rollback** | ❌ No | ❌ Manual | ❌ Manual | **✅ Yes (`--rollback`)** |
 | **Key Privacy** | N/A | Plaintext | Plaintext | **✅ Masked by default (`5885...4FD6`)** |
 | **Accessibility & CI** | N/A | N/A | N/A | **✅ `NO_COLOR` / `--no-color` compliant** |
-| **Test Coverage** | None | None | Unknown | **30 Unit & Persona Tests (100% Pass)** |
+| **Test Coverage** | None | None | Unknown | **30 Automated Tests (100% Pass)** |
 
 ---
 
@@ -132,8 +134,8 @@ Comprehensive engineering documentation organized by operational use case:
 | **Reference** | Information | [CLI Options](docs/reference/cli-options.md) • [Key Formats & Schema](docs/reference/key-formats-schema.md) • [Exit Codes](docs/reference/exit-codes.md) |
 | **Explanation** | Understanding | [System Architecture Flow](docs/Architecture.md) • [Bluetooth Cryptography](docs/explanation/bluetooth-cryptography.md) • [Windows Security](docs/explanation/windows-system-security.md) • [BlueZ Architecture](docs/explanation/linux-bluez-architecture.md) |
 
-### 🏛️ Architectural Decision Records (MADR v4.0)
-Key engineering choices are documented in `docs/decisions/`:
+### 🏛️ Engineering Decision Records (ADRs)
+Key technical choices are documented in `docs/decisions/`:
 - [ADR 0001: Ephemeral Scheduled Task for Windows SYSTEM Elevation](docs/decisions/0001-ephemeral-system-task.md)
 - [ADR 0002: Non-Destructive INI Stream Parser](docs/decisions/0002-nondestructive-ini-parser.md)
 - [ADR 0003: Zero External Dependencies Policy](docs/decisions/0003-zero-external-dependencies.md)
@@ -146,7 +148,7 @@ This project is built and maintained as a free, independent open-source tool for
 
 - **GitHub Sponsors**: [github.com/sponsors/TunahanBasri](https://github.com/sponsors/TunahanBasri)
 
-Every sponsorship fuels maintenance, testing on new Linux kernels, and BLE (Bluetooth Low Energy) roadmap progress!
+Every sponsorship fuels ongoing maintenance, testing on new Linux kernel releases, and ongoing feature development!
 
 ---
 
@@ -154,6 +156,4 @@ Every sponsorship fuels maintenance, testing on new Linux kernels, and BLE (Blue
 
 This project is licensed under the permissive **MIT License** - see the [LICENSE](LICENSE) file for details.
 - 100% Free and Open-Source software.
-- AI Search & Indexing Friendly: Freely indexed so AI assistants (ChatGPT, Copilot, Claude, Gemini) and search engines can recommend it to users facing dual-boot friction.
-
-Contributions are warmly welcomed! Please review [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.
+- Contributions, bug reports, and pull requests are warmly welcomed! Please review [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.

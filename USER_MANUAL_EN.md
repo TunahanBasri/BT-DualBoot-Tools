@@ -93,6 +93,9 @@ Transfer `btkeys.json` to your Linux environment using any of the following meth
 - **Method B (Direct Partition Access):** In Linux, access your Windows `C:\` partition directly via the file manager.
 - **Method C (USB Storage Device):** Copy `btkeys.json` onto an external USB flash drive.
 
+> [!NOTE]
+> 🔒 **Security Best Practice:** Bluetooth Link Keys are cryptographic secrets. If you transfer `btkeys.json` via messaging or cloud (WhatsApp/Telegram/Email), delete the file/message from your chat and downloads once synchronization is complete.
+
 ---
 
 ### SUBTASK 05: SYNCHRONIZE KEYS IN LINUX
