@@ -100,11 +100,11 @@ Summary: 0 already synced, 2 to update, 0 not found in Linux
 
 ## 📊 Comparison & Benchmarks
 
-| Feature / Metric | 🔄 Manual Re-Pairing | 🛠️ Manual Hive Mount (`chntpw`) | 📦 Third-Party EXE / PsExec | 🚀 **BT-DualBoot Tools** |
+| Feature / Metric | 🔄 Re-Pairing Each Boot | 🛠️ Offline Disk Mount | 📦 Third-Party Binaries | 🚀 **BT-DualBoot Tools** |
 | :--- | :--- | :--- | :--- | :--- |
 | **Time per Switch** | 2 - 5 Minutes | 10 - 20 Minutes | 3 - 5 Minutes | **< 2 Seconds** |
-| **External Dependencies** | None | `chntpw`, `ntfs-3g` | Closed-source binaries | **Zero (Pure Python + PowerShell)** |
-| **Registry Risk** | None | ⚠️ High (raw hive write) | Low | **Zero (Native read-only API)** |
+| **External Dependencies** | None | Raw NTFS drivers / parsers | External runtimes | **Zero (Native OS tools only)** |
+| **Disk / OS Integrity** | Safe | Potential dirty bit / fast startup issue | Varies | **Safe (Native read-only API)** |
 | **Device Friendly Names** | Manual guesswork | Raw MAC only | Raw MAC only | **Automatic resolution** |
 | **Simulation Mode** | ❌ No | ❌ No | ❌ No | **✅ Yes (`--dry-run`)** |
 | **Instant Rollback** | ❌ No | ❌ Manual | ❌ Manual | **✅ Yes (`--rollback`)** |
@@ -114,9 +114,9 @@ Summary: 0 already synced, 2 to update, 0 not found in Linux
 
 ---
 
-## 📚 Diátaxis Documentation Architecture
+## 📚 Documentation & Technical Guides
 
-Complete engineering documentation organized into the Diátaxis 4-quadrant standard:
+Comprehensive engineering documentation organized by operational use case:
 
 | Quadrant | Focus | Guides & References |
 | :--- | :--- | :--- |
