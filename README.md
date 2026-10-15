@@ -66,53 +66,6 @@ Summary: 0 already synced, 2 to update, 0 not found in Linux
 
 ---
 
-## 🏛️ Architecture & Synchronization Flow
-
-```mermaid
-flowchart TD
-    subgraph Windows [" 🪟 Windows Session "]
-        A["Administrator PowerShell"] -->|Runs| B["Export-BluetoothKeys.ps1"]
-        B -->|Ephemeral Task| C["NT AUTHORITY/SYSTEM"]
-        C -->|reg export| D["BTHPORT Parameters/Keys"]
-        D -->|In-Memory Parse & PnP Lookup| E["Friendly Names Resolved"]
-        E -->|Atomic Clean File| F["btkeys.json"]
-    end
-
-    subgraph Storage [" 🔄 Shared Storage / Partition "]
-        F --> G[("btkeys.json")]
-    end
-
-    subgraph Linux [" 🐧 Linux Session (BlueZ) "]
-        G -->|CLI Import| H["bt-dualboot CLI"]
-        H -->|Validation| I["Schema & MAC Validator"]
-        H -->|Safety First| J["create_backup"]
-        J -->|Timestamped Snapshot| K["/var/lib/bluetooth/backups/..."]
-        I -->|Plan Check| L{"--dry-run ?"}
-        L -->|Yes| M["Print Diff Table & Exit"]
-        L -->|No| N["Non-Destructive Atomic INI Injection"]
-        N -->|systemctl restart| O["BlueZ bluetoothd"]
-        O --> P["Peripherals Connected Instantly! 🎉"]
-    end
-```
-
----
-
-## 📊 Comparison & Benchmarks
-
-| Feature / Metric | 🔄 Manual Re-Pairing | 🛠️ Manual Hive Mount (`chntpw`) | 📦 Third-Party EXE / PsExec | 🚀 **BT-DualBoot Tools** |
-| :--- | :--- | :--- | :--- | :--- |
-| **Time per Switch** | 2 - 5 Minutes | 10 - 20 Minutes | 3 - 5 Minutes | **< 2 Seconds** |
-| **External Dependencies** | None | `chntpw`, `ntfs-3g` | Closed-source binaries | **Zero (Pure Python + PowerShell)** |
-| **Registry Risk** | None | ⚠️ High (raw hive write) | Low | **Zero (Native read-only API)** |
-| **Device Friendly Names** | Manual guesswork | Raw MAC only | Raw MAC only | **Automatic resolution** |
-| **Simulation Mode** | ❌ No | ❌ No | ❌ No | **✅ Yes (`--dry-run`)** |
-| **Instant Rollback** | ❌ No | ❌ Manual | ❌ Manual | **✅ Yes (`--rollback`)** |
-| **Key Privacy** | N/A | Plaintext | Plaintext | **✅ Masked by default (`5885...4FD6`)** |
-| **Accessibility & CI** | N/A | N/A | N/A | **✅ `NO_COLOR` / `--no-color` compliant** |
-| **Test Coverage** | None | None | Unknown | **30 Unit & Persona Tests (100% Pass)** |
-
----
-
 ## 🚀 Quickstart Guide (2 Steps • 30 Seconds)
 
 ```
@@ -145,6 +98,22 @@ flowchart TD
 
 ---
 
+## 📊 Comparison & Benchmarks
+
+| Feature / Metric | 🔄 Manual Re-Pairing | 🛠️ Manual Hive Mount (`chntpw`) | 📦 Third-Party EXE / PsExec | 🚀 **BT-DualBoot Tools** |
+| :--- | :--- | :--- | :--- | :--- |
+| **Time per Switch** | 2 - 5 Minutes | 10 - 20 Minutes | 3 - 5 Minutes | **< 2 Seconds** |
+| **External Dependencies** | None | `chntpw`, `ntfs-3g` | Closed-source binaries | **Zero (Pure Python + PowerShell)** |
+| **Registry Risk** | None | ⚠️ High (raw hive write) | Low | **Zero (Native read-only API)** |
+| **Device Friendly Names** | Manual guesswork | Raw MAC only | Raw MAC only | **Automatic resolution** |
+| **Simulation Mode** | ❌ No | ❌ No | ❌ No | **✅ Yes (`--dry-run`)** |
+| **Instant Rollback** | ❌ No | ❌ Manual | ❌ Manual | **✅ Yes (`--rollback`)** |
+| **Key Privacy** | N/A | Plaintext | Plaintext | **✅ Masked by default (`5885...4FD6`)** |
+| **Accessibility & CI** | N/A | N/A | N/A | **✅ `NO_COLOR` / `--no-color` compliant** |
+| **Test Coverage** | None | None | Unknown | **30 Unit & Persona Tests (100% Pass)** |
+
+---
+
 ## 📚 Diátaxis Documentation Architecture
 
 Complete engineering documentation organized into the Diátaxis 4-quadrant standard:
@@ -154,7 +123,7 @@ Complete engineering documentation organized into the Diátaxis 4-quadrant stand
 | **Tutorials** | Learning | [Quickstart Guide](docs/tutorials/quickstart.md) |
 | **How-To Guides** | Problem-Solving | [Sync Devices](docs/how-to/sync-devices.md) • [Rollback & Recovery](docs/how-to/rollback-backup.md) • [Windows Extraction](docs/how-to/windows-key-extraction.md) |
 | **Reference** | Information | [CLI Options](docs/reference/cli-options.md) • [Key Formats & Schema](docs/reference/key-formats-schema.md) • [Exit Codes](docs/reference/exit-codes.md) |
-| **Explanation** | Understanding | [Bluetooth Cryptography](docs/explanation/bluetooth-cryptography.md) • [Windows Security](docs/explanation/windows-system-security.md) • [BlueZ Architecture](docs/explanation/linux-bluez-architecture.md) |
+| **Explanation** | Understanding | [System Architecture Flow](docs/Architecture.md) • [Bluetooth Cryptography](docs/explanation/bluetooth-cryptography.md) • [Windows Security](docs/explanation/windows-system-security.md) • [BlueZ Architecture](docs/explanation/linux-bluez-architecture.md) |
 
 ### 🏛️ Architectural Decision Records (MADR v4.0)
 Key engineering choices are documented in `docs/decisions/`:
