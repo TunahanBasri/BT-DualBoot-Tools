@@ -102,7 +102,7 @@ Pair device in Settings              1. Pair device in Settings              1. 
    ```
    *(Or if you prefer the CLI: `sudo bt-dualboot btkeys.json` or `sudo python -m bt_dualboot.cli btkeys.json --dry-run`)*
 3. Drag and drop your **`btkeys.json`** file directly into the terminal window (or place it in the project folder and press Enter).
-4. **Done!** The tool automatically creates a rollback backup, converts BLE keys, updates BlueZ, and restarts Bluetooth. Your keyboard and mouse connect immediately without ever needing re-pairing!
+4. **Done!** The tool automatically creates a rollback backup, injects pairing keys into BlueZ, and restarts Bluetooth. Your keyboard and mouse connect immediately without ever needing re-pairing!
 
 ---
 
@@ -154,6 +154,6 @@ Every sponsorship fuels ongoing maintenance, testing on new Linux kernel release
 
 ## 📄 License & Contributing
 
-This project is licensed under the permissive **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the permissive [MIT License](LICENSE) — see the [LICENSE](LICENSE) file for details.
 - 100% Free and Open-Source software.
 - Contributions, bug reports, and pull requests are warmly welcomed! Please review [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.
